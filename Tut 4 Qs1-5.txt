@@ -1,0 +1,194 @@
+Tutorial 4
+
+Question 1
+
+import numpy as np
+from numpy.fft import fft
+import matplotlib.pyplot as plt
+
+
+def sinecosine_Matx(pts=100,order=10):
+    vec=np.arange(0,pts)/(pts)*2*np.pi
+    Matrx=np.zeros((pts,2*order-1))
+    Matrx[:,0]=1.0
+    for j in range(1,order):
+        Matrx[:,2*j-1]=np.cos(j*vec)
+        Matrx[:,2*j]=-np.sin(j*vec)
+    return np.matrix(Matrx)
+
+if __name__=='__main__':
+    pts=100
+    order=10
+    data=np.random.randn(pts)
+    Matrx=sinecosine_Matx(pts,order)
+    data=np.random.randn(pts)
+    datft=np.fft.fft(data)
+    data=np.matrix(data).transpose()
+    fit=np.linalg.inv(Matrx.transpose()*Matrx)*(Matrx.transpose()*data)
+    delta=np.complex(fitp[5],fitp[6])-datft[3]/(0.5*pts)
+    print('error is ' + repr(delta)')
+
+
+
+
+
+
+Question 2
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def simulate_lorentz(t,a=1,b=1,c=0):
+    dat=a/(b+(t-c)**2)
+    dat+=np.random.randn(t.size)
+    return dat
+
+
+class Lorentz:
+    def __init__(self,t,a=1,b=0.5,c=0,offset=0):
+        self.t=t
+        self.y=simulate_lorentz(t,a,b,c)+offset
+        self.error=np.ones(t.size)
+        self.a=a
+        self.b=b
+        self.c=c
+
+    def get_chis(self,vec):
+        a=vec[0]
+        b=vec[1]
+        c=vec[2]
+        offset=vec[3]
+        pred=offset+a/(b+(self.t-c)**2)
+        chisq=np.sum((self.y-pred)**2/self.error**2)
+        return chisq
+
+
+def get_trial_offset(sigs):
+    return sigs*np.random.randn(sigs.size)
+
+
+def run_mcmc(data,start_pos,nstep,scale=None):
+    nparam=start_pos.size
+    params=np.zeros([nstep,nparam+1])
+    params[0,0:-1]=start_pos
+    cur_chisq=data.get_chisq(start_pos)
+    cur_pos=start_pos.copy()
+    if scale==None:
+       scale=np.ones(nparam)
+    for i in range(1,nstep):
+        new_pos=cur_pos+get_trial_offset(scale)
+        new_chisq=data.get_chisq(new_pos)
+        if new_chisq<cur_chisq:
+            accept=True
+        else:
+            delta=new_chisq-cur_chisq
+            prob=np.exp(-0.5*delta)
+            if np.random.rand()<prob:
+                accept=True
+            else:
+                accept=False
+        if accept:
+            cur_pos=new_pos
+            cur_chisq=new_chisq
+        params[i,0:-1]=cur_pos
+        params[i,-1]=cur_chisq
+    return params
+
+
+if __name__ == '__main__':
+
+    t=np.arange(-5,5,0.01)
+    data=Lorentz(t,a=5)
+
+    guess=np.array([1.2,0.3,0.3,-0.2])
+    scale=np.array([0.1,0.1,0.1,0.1])
+    nstep=10000
+    chain=run_mcmc(data,guess,nstep,scale)
+    nn=int(np.round(0.2*nstep))
+    chain=chain[nn:,:]  
+
+    true_param=np.array([data.a,data.b,data.c])
+    for i in range(0,true_param.size):
+        val=np.mean(chain[:,i])
+        scat=np.std(chain[:,i])
+        print('true_param[i],val,scat')
+
+
+
+
+Question 3
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+class Advection:
+    def __init__(self,npart=100,v=-1.0,dx=1.0):
+        x=numpy.zeros(npart)
+        x[npart/3:2*npart/3]=1.0;
+        self.x=x
+        self.v=v
+        self.dx=dx            
+    def period_bndcond(self):
+        self.x[0]=self.x[-2]
+        self.x[-1]=self.x[1]          
+    def update(self,dt=1.0):
+        self.period_bndcond()
+        delta=self.x[1:]-self.x[0:-1]
+        self.x[1:-1]+=self.v*dt/self.dx*delta[1:]
+
+if __name__=='__main__':
+    material=advection()
+    plt.ion()
+    plt.plot(material.x)
+    plt.show()
+    for i in range(0,100):
+        material.update()
+        plt.clf()
+        plt.plot(material.x)
+        plt.draw()
+
+
+
+
+Question 4
+
+For the CFl condition to be violated: a>1 or dt>dx/v.
+When our critical value 'k' is chosen to be zero, the expression '1-a(1-exp(-ik))',
+evaluates to one (1-a(0)), which implies that k=0 is still stable since our choice of 'a' 
+will lead to the same evaluation of one for the expression '1-a(1-exp(-ik))'.
+As long as a>1, all values of 'k' are stable.
+
+
+
+
+
+
+Question 5
+
+
+The assert condition in the code will end the loop if an unrecognized set of boundary conditions 
+is specified. The boundary conditions are necessarily smooth and periodic for the code to run without producing erranous
+results. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
